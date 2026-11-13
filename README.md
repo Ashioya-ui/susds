@@ -16,7 +16,7 @@
 2. **Pro rata.** When `B < 1`, every redemption pays the same fraction, so the first to redeem gains nothing over the last. There is no reason to run.
 3. **Buffer.** `fund(y)` adds USDC without minting. `bufferBps()` reports `B − 1`. With one reserve asset and a worst-case loss of 10%, a buffer of 11.11% keeps every redemption at one dollar.
 
-Inside Base, the price of sUSDs on any route stays within the fees of the pools that connect the route to `mint`/`redeem`; arbitrage enforces it every block. What no contract can bound is the link from USDC to the dollar: see the note below.
+Inside Base, the price of sUSDs on any route stays within the fees of the pools that connect the route to `mint`/`redeem`; arbitrage enforces it every block. What no contract can bound is the link from USDC to the dollar.
 
 ## Use it
 
@@ -33,7 +33,7 @@ susds.bufferBps()         // buffer in basis points
 
 - `contracts/SUSDs.sol`: the whole contract, 102 lines.
 - `script/`: compiled artifact (solc 0.8.26, viaIR, cancun), the gas-sponsor request that deployed it, an offline signer.
-- `note/`: *Depegs are holes: when an on-chain coin is money*, the design and its proofs, with the March 2023 data.
-- `paper/`: *The length-over-diameter ratio of self-approaching curves* (Langetepe, Ashioya), the bound the reserve rules use.
+
+The proofs behind the three rules are in the note *Depegs are holes: when an on-chain coin is money* (Ashioya, November 2026), kept separately.
 
 Deployment: `script/gas_req.json` is the body for `POST https://api.liquidagent.ai/v1/gas`. The address depends only on the salt and the code, not on the sender.
