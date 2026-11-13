@@ -1,14 +1,39 @@
 # sUSDs
 
-A stablecoin with an atomic par link, pro-rata redemption and a first-loss buffer, and the two papers it rests on.
+**A dollar coin on Base that redeems pro rata, at every hour, with no one in charge.**
 
-- `contracts/SUSDs.sol`: one contract, no owner, no pause, no upgrade. `mint` and `redeem` are one call each against USDC held in the contract; a redemption of x coins pays x · min(1, B) USDC, B = reserve/supply; `fund` adds the buffer. Design D1–D3 of the note below.
-- `script/`: compiled artifact (solc 0.8.26, viaIR, cancun) and an offline signer for the Base mainnet deployment. Deployer 0x27e0b6d815641c3a0a0940a8409c37b1fa8043ee; direct deployment at nonce 0 gives 0x6dbb390f95e4d64a80c943fb25fa1d93161e3f27, CREATE2 through 0x4e59b44847b379578588920cA78FbF26c0B4956C with salt keccak("sUSDs:2026-11-13") gives 0x48d55161357bd8782833ff80bf33e5e30846aa30. Simulated on Base mainnet: 830,662 gas.
-- `note/`: *Depegs are holes: when an on-chain coin is money* (W. A. Ashioya, 12 November 2026), with its data workbook.
-- `paper/`: *The length-over-diameter ratio of self-approaching curves* (E. Langetepe and W. A. Ashioya, November 2026), PDF and arXiv source. Proposition 9 of the note uses its Theorem 4.2.
+| | |
+|---|---|
+| Contract | [`0x48d55161357bd8782833ff80bf33e5e30846aa30`](https://basescan.org/address/0x48d55161357bd8782833ff80bf33e5e30846aa30) on Base (chain 8453) |
+| Reserve asset | USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Deployed | 13 November 2026, block 56,913,768, [tx `0x006c…dccf`](https://basescan.org/tx/0x006c1050bb77a134bacc0afb53c490de297281bc1f62d4bd2c8ad5b03ac9dccf), CREATE2 with salt `keccak("sUSDs:2026-11-13")`, gas paid by a sponsor in USDC |
+| Owner, admin, pause, upgrade | none |
+| Decimals | 6 |
 
-Status, 13 November 2026: deployment signed, not yet broadcast (the deployer holds no ETH on Base).
+## Three rules, one contract
 
-## Deploy with the gas sponsor (no ETH)
+1. **Atomic par.** `mint(x)`: x USDC in, x sUSDs out. `redeem(x)`: x sUSDs in, `x · min(1, B)` USDC out, where `B = reserve / supply`. Both are one call, at any time.
+2. **Pro rata.** When `B < 1`, every redemption pays the same fraction, so the first to redeem gains nothing over the last. There is no reason to run.
+3. **Buffer.** `fund(y)` adds USDC without minting. `bufferBps()` reports `B − 1`. With one reserve asset and a worst-case loss of 10%, a buffer of 11.11% keeps every redemption at one dollar.
 
-`script/gas_req.json` is the body for `POST https://api.liquidagent.ai/v1/gas`: a CREATE2 call to the deterministic deployer, salt keccak("sUSDs:2026-11-13"), initcode = SUSDs with USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`. The contract address, `0x48d55161357bd8782833ff80bf33e5e30846aa30`, depends only on the salt and the initcode, so **any** wallet may send it: replace `sender` with your own address, pay the 402 quote in USDC over x402 (about $0.03), sign the returned typedData (and the EIP-7702 authorization on first use), and POST the signed operation back to the same URL.
+Inside Base, the price of sUSDs on any route stays within the fees of the pools that connect the route to `mint`/`redeem`; arbitrage enforces it every block. What no contract can bound is the link from USDC to the dollar: see the note below.
+
+## Use it
+
+```
+usdc.approve(0x48d55161357bd8782833ff80bf33e5e30846aa30, amount)
+susds.mint(amount)        // 1 USDC = 1 sUSDs, 6 decimals
+susds.redeem(amount)      // pays amount · min(1, B) USDC
+susds.fund(amount)        // adds to the reserve, mints nothing
+susds.backingPpm()        // B in parts per million
+susds.bufferBps()         // buffer in basis points
+```
+
+## In this repository
+
+- `contracts/SUSDs.sol`: the whole contract, 102 lines.
+- `script/`: compiled artifact (solc 0.8.26, viaIR, cancun), the gas-sponsor request that deployed it, an offline signer.
+- `note/`: *Depegs are holes: when an on-chain coin is money*, the design and its proofs, with the March 2023 data.
+- `paper/`: *The length-over-diameter ratio of self-approaching curves* (Langetepe, Ashioya), the bound the reserve rules use.
+
+Deployment: `script/gas_req.json` is the body for `POST https://api.liquidagent.ai/v1/gas`. The address depends only on the salt and the code, not on the sender.
