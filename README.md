@@ -8,3 +8,7 @@ A stablecoin with an atomic par link, pro-rata redemption and a first-loss buffe
 - `paper/`: *The length-over-diameter ratio of self-approaching curves* (E. Langetepe and W. A. Ashioya, November 2026), PDF and arXiv source. Proposition 9 of the note uses its Theorem 4.2.
 
 Status, 13 November 2026: deployment signed, not yet broadcast (the deployer holds no ETH on Base).
+
+## Deploy with the gas sponsor (no ETH)
+
+`script/gas_req.json` is the body for `POST https://api.liquidagent.ai/v1/gas`: a CREATE2 call to the deterministic deployer, salt keccak("sUSDs:2026-11-13"), initcode = SUSDs with USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`. The contract address, `0x48d55161357bd8782833ff80bf33e5e30846aa30`, depends only on the salt and the initcode, so **any** wallet may send it: replace `sender` with your own address, pay the 402 quote in USDC over x402 (about $0.03), sign the returned typedData (and the EIP-7702 authorization on first use), and POST the signed operation back to the same URL.
