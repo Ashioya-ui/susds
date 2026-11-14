@@ -2,7 +2,7 @@
 
 PRUSD is a USD stablecoin whose reserve is split equally across three USD stablecoins. The contract keeps any two of the three worth at least the whole PRUSD supply, so if one reserve coin goes to zero, every PRUSD still redeems for one dollar from the other two. Redemption uses no price feed: the holder chooses which reserve coins to receive, up to a pro-rata cap on each. The contract account has no access keys, so nobody, including its author, can change the code or move the reserve.
 
-**Live demo:** https://ashioya-ui.github.io/susds/ (reads the contract on NEAR testnet; pick a reserve coin to fail)
+**Live demo:** https://ashioya-ui.github.io/susds/ (pick USDC, USDT or DAI to collapse and see what the live contract pays)
 
 NEAR Hackathon 2026, track **Real-World Money**. Built 13 to 14 November 2026.
 
@@ -52,7 +52,7 @@ test core::fuzz::theorems_hold_on_random_sequences ... ok
 | | |
 |---|---|
 | PRUSD | [`coin.prusd-mwgt5ryd.testnet`](https://testnet.nearblocks.io/address/coin.prusd-mwgt5ryd.testnet) |
-| Reserve legs (test dollars, no value, open faucet) | `usd-a`, `usd-b`, `usd-c` under `prusd-mwgt5ryd.testnet` |
+| Reserve tokens | `usd-a`, `usd-b`, `usd-c` under `prusd-mwgt5ryd.testnet`: test tokens standing in for USDC, USDT and DAI, no value, open faucet |
 | Access keys on the PRUSD account | none: [deleted](https://testnet.nearblocks.io/txns/FR2Q4u8ce3MNT1uo7iiPXy9pMB6TKfiSxYmLGQmmMFM9), so the code cannot be changed by anyone |
 
 What was run, in order:

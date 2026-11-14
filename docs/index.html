@@ -19,35 +19,35 @@ button:hover{border-color:var(--mute)}button.on{border-color:var(--bad);color:va
 .try{display:grid;grid-template-columns:1fr;gap:8px}.ans{font:.86rem/1.4 ui-monospace,Menlo,Consolas,monospace;background:#0a100d;border:1px solid var(--line);border-radius:10px;padding:10px;min-height:42px;overflow-wrap:anywhere}
 a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}small{color:var(--mute)}
 </style></head><body><div class="wrap">
-<div><h1>PRUSD: kill a reserve coin, watch it still pay $1</h1>
-<p class="sub">Everything on this page is read live from the contract on NEAR testnet. Nothing is simulated in the browser.</p></div>
+<div><h1>If USDC, USDT or DAI collapses, PRUSD still pays $1</h1>
+<p class="sub">PRUSD holds all three. Pick one to collapse and see what the contract on NEAR pays out. The numbers come from the live contract.</p></div>
 
 <div class="card"><h2>Live reserve <span id="blk"></span></h2>
 <div class="bar" id="bar"></div><div class="need"><i id="needI"></i><span id="needS"></span></div>
 <div class="row"><span>PRUSD in circulation</span><b id="sup">…</b></div>
 <div class="row"><span>Reserve held</span><b id="tot">…</b></div>
-<div class="row"><span>First-loss buffer</span><b id="buf">…</b></div>
-<div class="row"><span>Survives any one coin failing</span><span class="tag" id="safe">…</span></div></div>
+<div class="row"><span>Extra reserve (takes losses first)</span><b id="buf">…</b></div>
+<div class="row"><span>Covered if any one collapses</span><span class="tag" id="safe">…</span></div></div>
 
-<div class="card"><h2>Stress test: pick a reserve coin to fail</h2>
-<div class="btns"><button data-k="0">Coin A fails</button><button data-k="1">Coin B fails</button><button data-k="2">Coin C fails</button></div>
-<div id="res"><p class="sub" style="margin-top:12px">The contract is asked how it would pay out every PRUSD without that coin.</p></div></div>
+<div class="card"><h2>Pick one to collapse</h2>
+<div class="btns"><button data-k="0">USDC</button><button data-k="1">USDT</button><button data-k="2">DAI</button></div>
+<div id="res"><p class="sub" style="margin-top:12px">In March 2023 USDC dropped to $0.88 and took DAI down with it.</p></div></div>
 
 <div class="card"><h2>Try to break it</h2><div class="try">
-<button data-t="mint">Mint $5.00 without adding buffer</button>
-<button data-t="run">Redeem $0.30 all from coin A (a run on one coin)</button>
-<button data-t="buf">Pull out the whole buffer</button>
-<div class="ans" id="ans">The contract's own answer appears here.</div></div></div>
+<button data-t="mint">Print $5 of PRUSD without enough reserve</button>
+<button data-t="run">Cash out $0.30 taking only USDC (grab the best coin first)</button>
+<button data-t="buf">Withdraw all the extra reserve</button>
+<div class="ans" id="ans">The contract's answer appears here.</div></div></div>
 
 <div class="card links"><h2>Evidence</h2>
 <a href="https://testnet.nearblocks.io/address/coin.prusd-mwgt5ryd.testnet">Contract: coin.prusd-mwgt5ryd.testnet</a>
-<a href="https://testnet.nearblocks.io/txns/FR2Q4u8ce3MNT1uo7iiPXy9pMB6TKfiSxYmLGQmmMFM9">Access keys deleted: nobody can change the code</a>
-<a href="https://testnet.nearblocks.io/txns/BmdMrzNx8K3y1u2485wtXERKwcXC7A1HtU9BYA1vX1Rk">Real redemption at full value with coin C left out</a>
-<a href="https://github.com/Ashioya-ui/susds/tree/main/near">Source, proofs and the 600,000-call check</a>
-<small>Reserve coins here are test tokens with no value. Built at NEAR Hackathon 2026 by William Alubokho Ashioya.</small></div>
+<a href="https://testnet.nearblocks.io/txns/FR2Q4u8ce3MNT1uo7iiPXy9pMB6TKfiSxYmLGQmmMFM9">Keys deleted: nobody, including me, can change the code</a>
+<a href="https://testnet.nearblocks.io/txns/BmdMrzNx8K3y1u2485wtXERKwcXC7A1HtU9BYA1vX1Rk">A real cash-out paid in full with DAI left out</a>
+<a href="https://github.com/Ashioya-ui/susds/tree/main/near">Source code and proofs</a>
+<small>This runs on NEAR testnet. The three reserve tokens are test tokens standing in for USDC, USDT and DAI; they have no value. Built at NEAR Hackathon 2026 by William Alubokho Ashioya.</small></div>
 </div>
 <script>
-const C="coin.prusd-mwgt5ryd.testnet",RPC="https://test.rpc.fastnear.com",COL=["var(--a)","var(--b)","var(--c)"],NM=["A","B","C"];
+const C="coin.prusd-mwgt5ryd.testnet",RPC="https://test.rpc.fastnear.com",COL=["var(--a)","var(--b)","var(--c)"],NM=["USDC","USDT","DAI"];
 const usd=u=>"$"+(Number(u)/1e6).toFixed(2);
 async function view(m,args={}){const r=await fetch(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"query",params:{request_type:"call_function",finality:"final",account_id:C,method_name:m,args_base64:btoa(JSON.stringify(args))}})});
   const j=await r.json();if(!j.result||!j.result.result)throw new Error(JSON.stringify(j.error||j));return{v:JSON.parse(new TextDecoder().decode(new Uint8Array(j.result.result))),h:j.result.block_height};}
@@ -57,12 +57,12 @@ function draw(dead){const h=S.holdings.map(Number),t=h.reduce((a,b)=>a+b,0),s=Nu
   document.getElementById("needI").style.left=document.getElementById("needS").style.left=(100*s/t)+"%";document.getElementById("needS").textContent="owed to holders "+usd(s);
   document.getElementById("sup").textContent=usd(s);document.getElementById("tot").textContent=usd(t);
   document.getElementById("buf").textContent=usd(S.buffer_equity)+" ("+(Number(S.buffer_bps)/100).toFixed(0)+"% of supply)";
-  document.getElementById("safe").textContent=S.safe_against_any_one_leg_failing?"YES, enforced by the contract":"NO";}
+  document.getElementById("safe").textContent=S.safe_against_any_one_leg_failing?"YES":"NO";}
 async function load(){try{const r=await view("state");S=r.v;document.getElementById("blk").textContent="· block "+r.h.toLocaleString();draw(-1);}catch(e){document.getElementById("ans").textContent="Could not reach NEAR testnet: "+e.message;}}
 document.querySelectorAll("[data-k]").forEach(b=>b.onclick=async()=>{const k=+b.dataset.k;document.querySelectorAll("[data-k]").forEach(x=>x.classList.toggle("on",x===b));draw(k);
   const s=S.prusd_supply,res=document.getElementById("res");res.innerHTML='<p class="sub" style="margin-top:12px">Asking the contract…</p>';
   try{const q=(await view("quote_redeem",{coins:s,avoid_leg:k})).v,chk=(await view("check_redeem",{coins:s,take:q})).v,paid=q.reduce((a,b)=>a+Number(b),0);
-  res.innerHTML=`<div class="big ${paid>=Number(s)-3?"ok":"bad"}">PRUSD pays ${usd(paid)} of ${usd(s)}</div><div class="row"><span>Paid from</span><span>${q.map((x,i)=>i===k?"":NM[i]+" "+usd(x)).filter(Boolean).join(" + ")}</span></div><div class="row"><span>Taken from failed coin ${NM[k]}</span><span>$0.00</span></div><div class="row"><span>Contract's check of that payout</span><span>${chk}</span></div><div class="big bad" style="font-size:1.05rem;margin-top:14px">A coin backed only by ${NM[k]} would pay $0.00</div>`;}catch(e){res.textContent=e.message;}});
+  res.innerHTML=`<div class="big ${paid>=Number(s)-3?"ok":"bad"}">PRUSD pays ${usd(paid)} of ${usd(s)}</div><div class="row"><span>Paid from</span><span>${q.map((x,i)=>i===k?"":NM[i]+" "+usd(x)).filter(Boolean).join(" + ")}</span></div><div class="row"><span>Taken from ${NM[k]}</span><span>$0.00</span></div><div class="row"><span>Contract accepts this payout</span><span>${chk.startsWith('ok')?'yes':chk}</span></div><div class="big bad" style="font-size:1.05rem;margin-top:14px">A stablecoin holding only ${NM[k]} would pay $0.00</div>`;}catch(e){res.textContent=e.message;}});
 const T={mint:["check_mint",{coins:"5000001"}],run:["check_redeem",{coins:"300000",take:["300000","0","0"]}],buf:["check_withdraw_junior",{shares:"0"}]};
 document.querySelectorAll("[data-t]").forEach(b=>b.onclick=async()=>{const a=document.getElementById("ans");a.textContent="Asking the contract…";let[m,args]=T[b.dataset.t];if(m==="check_withdraw_junior")args={shares:S.buffer_shares};
   try{const v=(await view(m,args)).v;a.innerHTML=`<b>${m}(${JSON.stringify(args)})</b><br><span class="${v.startsWith("ok")?"ok":"bad"}">${v}</span>`;}catch(e){a.textContent=e.message;}});
