@@ -1,70 +1,129 @@
-# Pro Rata Dollar on NEAR
+# Pro Rata Dollar (PRUSD) on NEAR
 
-A USD stablecoin contract. Redemptions are paid pro rata from the reserve. The contract has no owner, no pause and no upgrade key. Built 13 to 14 November 2026 for the NEAR Hackathon, track **Real-World Money**.
+A USD stablecoin backed by several other USD stablecoins. It stays redeemable at par if any one of them fails completely. It reads no price feed, and the deployed contract has no owner and no access key.
 
-**Live on NEAR testnet**
-
-| | |
-|---|---|
-| PRUSD contract | [`prusd.proratadollar-mwgspqhd.testnet`](https://testnet.nearblocks.io/address/prusd.proratadollar-mwgspqhd.testnet) |
-| Reserve token (test dollar, no value, open faucet) | [`tusd.proratadollar-mwgspqhd.testnet`](https://testnet.nearblocks.io/address/tusd.proratadollar-mwgspqhd.testnet) |
-| Fund 0.10 | [`ARZgneok…`](https://testnet.nearblocks.io/txns/ARZgneoksULQqdcF7d5AbrVskSLz5jPbp63NxuxEcQwy) |
-| Mint 0.30 | [`HKG7hV7h…`](https://testnet.nearblocks.io/txns/HKG7hV7hYYJEKm11jUydnhuDr7qrUNMF96sKLpcYX8Xg) |
-| Redeem 0.05 | [`GDuicTV7…`](https://testnet.nearblocks.io/txns/GDuicTV7kL7uBtbUpqj66nr5stiTKNhbnj2YERBFEXXb) |
-| State after those calls | reserve 350000, supply 250000, backing 1.40, buffer 40% |
-
-On mainnet the reserve token is USDC; the test dollar exists only so that anyone can try the contract on testnet without asking for funds.
+NEAR Hackathon 2026, track **Real-World Money**. Built 13 to 14 November 2026.
 
 ## The problem
 
-Most stablecoins redeem first come, first served. If the reserve is short, early redeemers are paid in full and the last holders take the whole loss. Holders therefore race to redeem, as with USDC and DAI in March 2023.
+In March 2023 USDC fell to $0.88 and DAI fell with it, because DAI's reserve could be swapped one for one into USDC. A stablecoin that holds one reserve coin at par inherits that coin's depeg. Price oracles do not solve this: the oracle reports the depeg after holders have already raced to redeem, and whoever redeems first is paid in full while the last holders take the loss.
 
-## Three rules
+The note *Depegs are holes* (Ashioya, November 2026) shows why. A stablecoin's off-chain redemption is the one link in its price graph that no on-chain trade can bound. So PRUSD does not try to price that link. It is built to survive losing it.
 
-1. **Atomic par.** Send `x` of the reserve token with `ft_transfer_call(msg = "mint")` and receive `x` PRUSD. `redeem(x)` burns `x` PRUSD and pays `x · min(1, B)`, where `B = reserve / supply`.
-2. **Pro rata.** When `B < 1`, every redemption pays `B` per coin, whatever its order.
-3. **Buffer.** `ft_transfer_call(msg = "fund")` adds reserve and mints nothing. No method withdraws it.
+## How it works
 
-The three invariants (solvency is preserved; the buffer never shrinks; the backing ratio never falls under redemption) are proved by cases at the top of [`prusd/src/lib.rs`](prusd/src/lib.rs). The contract is about 150 lines.
+The reserve is held in `n` legs, one per reserve stablecoin, in equal parts. There are two claims on it:
+
+- **PRUSD**: redeemable at par.
+- **Buffer shares**: first loss. They earn the 0.10% mint fee.
+
+The contract enforces one condition, **SAFE**: for every leg, the *other* legs together hold at least the PRUSD supply.
+
+| Rule | What the contract does |
+|---|---|
+| Mint | Takes `x/n` plus 0.10% from every leg. Reverts unless SAFE holds afterwards. |
+| Redeem | Burns `x` PRUSD. The holder chooses the legs: at most `x` in total, at most `x · h[k] / supply` from leg `k`. |
+| Fund | Adds reserve in equal parts and issues buffer shares. |
+| Buffer withdrawal | Paid in proportion to holdings. Reverts unless SAFE holds afterwards. |
+
+A holder who distrusts one reserve coin redeems from the others. Nobody has to detect or declare a depeg.
+
+## What is proved
+
+The proofs are in the header of [`prusd/src/core.rs`](prusd/src/core.rs), which holds all the monetary logic in 110 lines with no chain calls.
+
+1. **Single-leg failure.** If SAFE holds and one leg becomes worthless, every PRUSD is still redeemable at par from the remaining legs.
+2. **No oracle.** No function reads a price.
+3. **Pro rata per leg.** A redemption never lowers `h[k] / supply` for any leg. Redeeming early takes nothing from later redeemers.
+4. **Mint gate.** No sequence of calls moves the contract from SAFE to not SAFE. A large mint cannot dilute the buffer, and a failing coin cannot be swapped into the reserve beyond its equal share.
+5. **Buffer.** Equity per buffer share never falls through any call.
+
+`cargo test` runs 600,000 random calls against the same code the contract executes and checks statements 1, 3, 4 and 5 in exact integer arithmetic after every accepted call:
+
+```
+calls 600000, accepted 382805, leg failures checked 59622
+test core::fuzz::theorems_hold_on_random_sequences ... ok
+```
+
+## Live on NEAR testnet
+
+| | |
+|---|---|
+| PRUSD | [`coin.prusd-mwgt5ryd.testnet`](https://testnet.nearblocks.io/address/coin.prusd-mwgt5ryd.testnet) |
+| Reserve legs (test dollars, no value, open faucet) | `usd-a`, `usd-b`, `usd-c` under `prusd-mwgt5ryd.testnet` |
+| Access keys on the PRUSD account | none: [deleted](https://testnet.nearblocks.io/txns/FR2Q4u8ce3MNT1uo7iiPXy9pMB6TKfiSxYmLGQmmMFM9), so the code cannot be changed by anyone |
+
+What was run, in order:
+
+| Step | Result |
+|---|---|
+| Mint 0.90 with no buffer | rejected by the mint gate |
+| Fund the buffer with 0.60 | [`CX1KArVC…`](https://testnet.nearblocks.io/txns/CX1KArVCkdDfJKRht9CPy8jA64AzTWqrdkhhWgwYBDko) |
+| Mint 0.90 | [`Dw3uAnno…`](https://testnet.nearblocks.io/txns/Dw3uAnnomivLXQLyRRDYMfaG4DbCNETWBJ1gGtv7Vvxx) |
+| Mint 1.50 more (buffer dilution) | rejected by the mint gate |
+| Treat leg C as failed: redeem 0.30, paid 0.15 from A and 0.15 from B | [`BmdMrzNx…`](https://testnet.nearblocks.io/txns/BmdMrzNx8K3y1u2485wtXERKwcXC7A1HtU9BYA1vX1Rk) |
+| Redeem 0.30 entirely from leg A (a run on one leg) | rejected: more than the pro-rata share |
+| Withdraw the whole buffer | rejected: PRUSD would be exposed |
+| Withdraw 0.09 of buffer shares | [`5z4AZ6XZ…`](https://testnet.nearblocks.io/txns/5z4AZ6XZLkFxfDffGcFyC4gzDTbjnpGQ5V7Trecn2TVF) |
 
 ## Check it yourself, no account needed
 
 ```
-curl -s https://test.rpc.fastnear.com -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"prusd.proratadollar-mwgspqhd.testnet","method_name":"backing_ppm","args_base64":"e30="}}'
+./view.sh state
+./view.sh check_mint '{"coins":"1500000"}'
+./view.sh check_redeem '{"coins":"300000","take":["300000","0","0"]}'
+./view.sh quote_redeem '{"coins":"300000","avoid_leg":2}'
+./view.sh check_withdraw_junior '{"shares":"510000"}'
 ```
 
-The `result` bytes decode to `"1400000"`. The other views are `reserve`, `ft_total_supply`, `buffer_bps`, `ft_metadata`, `ft_balance_of`.
+Expected, on the state left by the steps above:
+
+```
+"safe_against_any_one_leg_failing": true, "prusd_supply": "600000", "holdings": ["324008","324008","462750"]
+"rejected: mint gate: the buffer is too small for this mint; fund the buffer first"
+"rejected: redeem: more than the pro-rata share of a leg"
+["150000","150000","0"]
+"rejected: buffer locked: this withdrawal would leave PRUSD exposed to the failure of one leg"
+```
+
+The `check_*` views run the contract's own logic on the live state and return the reason a call would be rejected. Amounts have 6 decimals.
 
 ## Use it (near-cli)
 
 ```
-P=prusd.proratadollar-mwgspqhd.testnet; T=tusd.proratadollar-mwgspqhd.testnet
-near call $T faucet '{"amount":"1000000"}' --accountId you.testnet
-near call $T ft_transfer_call '{"receiver_id":"'$P'","amount":"300000","msg":"mint"}' --accountId you.testnet --depositYocto 1 --gas 100000000000000
-near call $P redeem '{"coins":"100000"}' --accountId you.testnet --depositYocto 1 --gas 100000000000000
-near view $P backing_ppm
+P=coin.prusd-mwgt5ryd.testnet
+for L in usd-a usd-b usd-c; do T=$L.prusd-mwgt5ryd.testnet
+  near call $T faucet '{"amount":"1000000"}' --accountId you.testnet
+  near call $T ft_transfer_call '{"receiver_id":"'$P'","amount":"400000","msg":""}' --accountId you.testnet --depositYocto 1 --gas 100000000000000
+done
+near call $P mint '{"coins":"30000"}' --accountId you.testnet
+near view $P quote_redeem '{"coins":"30000","avoid_leg":2}'
+near call $P redeem '{"coins":"30000","take":["15000","15000","0"]}' --accountId you.testnet --depositYocto 1 --gas 150000000000000
 ```
 
-Amounts have 6 decimals: `1000000` is one dollar.
-
-## Build and deploy
+## Build, test, deploy
 
 ```
 rustup toolchain install 1.86.0 -t wasm32-unknown-unknown
-CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS=fallback RUSTFLAGS="-C link-arg=-s" \
-  cargo +1.86.0 build --target wasm32-unknown-unknown --release
-npm i near-api-js@4.0.4 && node deploy_near.js   # creates a testnet account, deploys both contracts, runs fund, mint, redeem
+export CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS=fallback
+cargo +1.86.0 test -p prusd --release -- --nocapture
+RUSTFLAGS="-C link-arg=-s" cargo +1.86.0 build --target wasm32-unknown-unknown --release
+npm i near-api-js@4.0.4 && node deploy_near.js     # new testnet account, three test dollars, PRUSD, and the steps above
 ```
 
-## Where this goes: small cross-border payments
+## Use: small cross-border payments
 
-The first use is mobile money to mobile money across a border (Kenya to Zambia; USA to the Philippines), settled in PRUSD between two people, for amounts too small for card rails. The same coin runs on Base ([repo root](../README.md)), where 1,560 adversarial call sequences executed against live mainnet state took nothing from holders ([`evolve/`](../evolve)).
+PRUSD is meant as the settlement asset for mobile money to mobile money payments (Kenya to Zambia, USA to the Philippines) in amounts too small for card rails. A payout partner who is paid in PRUSD holds a claim on several issuers, not one.
 
 ## Limits
 
-- Testnet only. The reserve here is a valueless test token.
-- No storage deposits: the contract pays for balance storage. Fine for a pilot, to be changed before mainnet.
-- If a redemption payout fails, the burn is undone at the original amounts.
-- The proofs are written arguments in the source, not machine-checked.
+- Testnet. The reserve legs here are valueless test tokens; on mainnet they would be the USD stablecoins issued on NEAR.
+- The buffer is large: with `n` equal legs it must be `1/(n−1)` of supply (50% for three legs, 33% for four). Buffer holders are paid only the 0.10% mint fee. That is the cost of surviving a total failure without an oracle.
+- It covers the failure of one leg. Two legs failing together are shared pro rata.
+- A rejected transaction shows on the explorer as a generic WebAssembly trap; use the `check_*` views for the reason.
+- The contract pays for balance storage, and buffer shares are not transferable.
+- The proofs are written arguments checked by the randomized test, not machine-checked.
+
+The same coin in single-reserve form is live on Base mainnet ([repo root](../README.md)); 1,560 adversarial call sequences on live state found the buffer-dilution weakness that the mint gate here closes ([`evolve/`](../evolve)).
 
 Author: William Alubokho Ashioya, Nairobi.

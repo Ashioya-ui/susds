@@ -11,7 +11,7 @@
 | Owner, admin, pause, upgrade | none |
 | Decimals | 6 |
 
-**Also on NEAR testnet** (NEAR Hackathon 2026, Real-World Money): `prusd.proratadollar-mwgspqhd.testnet`. See [`near/`](near/README.md).
+**Also on NEAR testnet** (NEAR Hackathon 2026, Real-World Money): `coin.prusd-mwgt5ryd.testnet`, multi-reserve, survives the failure of any one reserve coin. See [`near/`](near/README.md).
 
 ## Three rules, one contract
 

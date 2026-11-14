@@ -8,6 +8,7 @@ use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Pr
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct Tusd {
+    symbol: String,
     supply: u128,
     balances: LookupMap<AccountId, u128>,
 }
@@ -15,8 +16,8 @@ pub struct Tusd {
 #[near]
 impl Tusd {
     #[init]
-    pub fn new() -> Self {
-        Self { supply: 0, balances: LookupMap::new(b"b") }
+    pub fn new(symbol: String) -> Self {
+        Self { symbol, supply: 0, balances: LookupMap::new(b"b") }
     }
 
     fn bal(&self, a: &AccountId) -> u128 {
@@ -86,6 +87,6 @@ impl Tusd {
     }
 
     pub fn ft_metadata(&self) -> Value {
-        json!({ "spec": "ft-1.0.0", "name": "Test Dollar (testnet only, no value)", "symbol": "TUSD", "decimals": 6 })
+        json!({ "spec": "ft-1.0.0", "name": "Test Dollar (testnet only, no value)", "symbol": self.symbol, "decimals": 6 })
     }
 }
