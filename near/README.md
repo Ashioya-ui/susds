@@ -1,6 +1,6 @@
 # Pro Rata Dollar (PRUSD) on NEAR
 
-A USD stablecoin backed by several other USD stablecoins. It stays redeemable at par if any one of them fails completely. It reads no price feed, and the deployed contract has no owner and no access key.
+PRUSD is a USD stablecoin whose reserve is split equally across three USD stablecoins. The contract keeps any two of the three worth at least the whole PRUSD supply, so if one reserve coin goes to zero, every PRUSD still redeems for one dollar from the other two. Redemption uses no price feed: the holder chooses which reserve coins to receive, up to a pro-rata cap on each. The contract account has no access keys, so nobody, including its author, can change the code or move the reserve.
 
 NEAR Hackathon 2026, track **Real-World Money**. Built 13 to 14 November 2026.
 
