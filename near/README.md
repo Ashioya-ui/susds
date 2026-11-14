@@ -1,6 +1,6 @@
 # Pro Rata Dollar on NEAR
 
-A dollar coin that redeems pro rata, with no owner, no pause and no upgrade key. Built 13 to 14 November 2026 for the NEAR Hackathon, track **Real-World Money**.
+A USD stablecoin contract. Redemptions are paid pro rata from the reserve. The contract has no owner, no pause and no upgrade key. Built 13 to 14 November 2026 for the NEAR Hackathon, track **Real-World Money**.
 
 **Live on NEAR testnet**
 
@@ -17,13 +17,13 @@ On mainnet the reserve token is USDC; the test dollar exists only so that anyone
 
 ## The problem
 
-A stablecoin that redeems first come, first served pays early redeemers in full and leaves the shortfall to whoever is last. That is the reason to run, and it is what happened to USDC and DAI in March 2023.
+Most stablecoins redeem first come, first served. If the reserve is short, early redeemers are paid in full and the last holders take the whole loss. Holders therefore race to redeem, as with USDC and DAI in March 2023.
 
 ## Three rules
 
 1. **Atomic par.** Send `x` of the reserve token with `ft_transfer_call(msg = "mint")` and receive `x` PRUSD. `redeem(x)` burns `x` PRUSD and pays `x · min(1, B)`, where `B = reserve / supply`.
-2. **Pro rata.** When `B < 1`, every redemption pays the same fraction. Redeeming first gains nothing over redeeming last.
-3. **Buffer.** `ft_transfer_call(msg = "fund")` adds reserve and mints nothing. No method pays the buffer out, to anyone, including whoever funded it.
+2. **Pro rata.** When `B < 1`, every redemption pays `B` per coin, whatever its order.
+3. **Buffer.** `ft_transfer_call(msg = "fund")` adds reserve and mints nothing. No method withdraws it.
 
 The three invariants (solvency is preserved; the buffer never shrinks; the backing ratio never falls under redemption) are proved by cases at the top of [`prusd/src/lib.rs`](prusd/src/lib.rs). The contract is about 150 lines.
 

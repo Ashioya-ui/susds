@@ -1,6 +1,6 @@
 # Pro Rata Dollar (PRUSD)
 
-**A dollar coin on Base that redeems pro rata, at every hour, with no one in charge.**
+**USD stablecoin contract on Base. Pro-rata redemption against a USDC reserve. No owner, no pause, no upgrade.**
 
 | | |
 |---|---|
@@ -16,7 +16,7 @@
 ## Three rules, one contract
 
 1. **Atomic par.** `mint(x)`: x USDC in, x PRUSD out. `redeem(x)`: x PRUSD in, `x · min(1, B)` USDC out, where `B = reserve / supply`. Both are one call, at any time.
-2. **Pro rata.** When `B < 1`, every redemption pays the same fraction, so the first to redeem gains nothing over the last. There is no reason to run.
+2. **Pro rata.** When `B < 1`, every redemption pays `B` per coin, whatever its order.
 3. **Buffer.** `fund(y)` adds USDC without minting. `bufferBps()` reports `B − 1`. With one reserve asset and a worst-case loss of 10%, a buffer of 11.11% keeps every redemption at one dollar.
 
 Inside Base, the price of PRUSD on any route stays within the fees of the pools that connect the route to `mint`/`redeem`; arbitrage enforces it every block. What no contract can bound is the link from USDC to the dollar.
