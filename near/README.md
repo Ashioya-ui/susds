@@ -30,7 +30,7 @@ A holder who distrusts one reserve coin redeems from the others. Nobody has to d
 
 ## What is proved
 
-The proofs are in the header of [`prusd/src/core.rs`](prusd/src/core.rs), which holds all the monetary logic in 110 lines with no chain calls.
+The proofs are in the header of [`prusd/src/core.rs`](prusd/src/core.rs), which holds all the monetary logic in about 150 lines with no chain calls.
 
 1. **Single-leg failure.** If SAFE holds and one leg becomes worthless, every PRUSD is still redeemable at par from the remaining legs.
 2. **No oracle.** No function reads a price.
