@@ -11,6 +11,8 @@
 | Owner, admin, pause, upgrade | none |
 | Decimals | 6 |
 
+**Also on NEAR testnet** (NEAR Hackathon 2026, Real-World Money): `prusd.proratadollar-mwgspqhd.testnet`. See [`near/`](near/README.md).
+
 ## Three rules, one contract
 
 1. **Atomic par.** `mint(x)`: x USDC in, x PRUSD out. `redeem(x)`: x PRUSD in, `x · min(1, B)` USDC out, where `B = reserve / supply`. Both are one call, at any time.
