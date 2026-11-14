@@ -30,9 +30,16 @@ susds.backingPpm()        // B in parts per million
 susds.bufferBps()         // buffer in basis points
 ```
 
+## Ramp: PRUSD to M-Pesa
+
+`contracts/Ramp.sol`, no owner. An agent posts a PRUSD bond. A buyer locks the amount and an equal stake; the agent accepts, pays M-Pesa and posts the hash of the receipt code; the buyer releases. No receipt within an hour: the buyer is refunded plus 1% from the bond. A disputed receipt sends the amount, the stake and the reserved bond into the PRUSD reserve, so neither side collects. The two invariants (an order pays out once; bond >= open obligations) are proved in the contract's comments.
+
+Address by CREATE2: `0xbe99a6744ff971ceb8aada3b64f44779419b9df7`, not yet broadcast. `script/sim_ramp.py` executes the v2 deployment, the migration from v1 and all six Ramp paths on live Base state with `eth_simulateV1`; all pass at block 57,459,219. `script/gas_req_migrate.json` and `script/gas_req_ramp.json` are the sponsor requests.
+
 ## In this repository
 
 - `contracts/PRUSD.sol`: the whole contract, 102 lines.
+- `contracts/Ramp.sol`: the M-Pesa escrow.
 - `script/`: compiled artifact (solc 0.8.26, viaIR, cancun), the gas-sponsor request that deployed it, an offline signer.
 
 The proofs behind the three rules are in the note *Depegs are holes: when an on-chain coin is money* (Ashioya, November 2026), kept separately.
