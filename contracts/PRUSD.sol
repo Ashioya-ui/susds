@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-/// @title sUSDs: a stablecoin with an atomic par link and pro-rata redemption.
+/// @title Pro Rata Dollar (PRUSD): a stablecoin with an atomic par link and pro-rata redemption.
 /// @notice One contract, no owner, no pause, no upgrade. The reserve is USDC held here.
 ///   D1 (atomic par): mint and redeem are one call each, at every hour, against the reserve.
 ///   D2 (pro rata):   a redemption of x coins pays x * min(1, B) USDC, B = reserve / supply,
@@ -16,9 +16,9 @@ interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
 }
 
-contract SUSDs {
-    string public constant name = "sUSDs";
-    string public constant symbol = "sUSDs";
+contract PRUSD {
+    string public constant name = "Pro Rata Dollar";
+    string public constant symbol = "PRUSD";
     uint8 public constant decimals = 6;
     IERC20 public immutable usdc;
 
