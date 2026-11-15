@@ -6,6 +6,10 @@ PRUSD is a USD stablecoin whose reserve is split equally across three USD stable
 
 NEAR Hackathon 2026, track **Real-World Money**. Built 13 to 14 November 2026.
 
+## Added 15 November, after the hackathon deadline: The Window
+
+A second contract in this repo, [`window/`](window/README.md), built on the day after development closed and listed here for completeness. It is a discount window for stablecoins: a pool that buys a doubted coin at a penalty rising with how much it already holds, up to a hard cap, with no price feed. Five properties are proved and checked on 600,000 random calls. It is replayed hour by hour on real Curve 3pool data from Ethereum mainnet for the three scares below (March 2023: pool 11% under par at the worst hour, 0.34% up at the end). Live on NEAR testnet at `pool.window-mwhc6re2.testnet`, keys deleted. [Live board](https://htmlpreview.github.io/?https://github.com/Ashioya-ui/susds/blob/main/docs/window.html) with the real market read from Ethereum.
+
 ## The problem
 
 In March 2023 USDC fell to $0.88 and DAI fell with it, because DAI's reserve could be swapped one for one into USDC. A stablecoin that holds one reserve coin at par inherits that coin's depeg. Price oracles do not solve this: the oracle reports the depeg after holders have already raced to redeem, and whoever redeems first is paid in full while the last holders take the loss.

@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The Window: live discounts</title>
+<title>The Window: live stablecoin stress board</title>
 <style>
 :root{--bg:#0e1512;--card:#16201b;--fg:#e8efe9;--mute:#93a39a;--line:#283530;--ok:#3ecf8e;--bad:#ff6b5e;--warn:#f2b84b;--a:#5aa9ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -15,10 +15,13 @@ button{font-weight:650;cursor:pointer;width:auto}.ans{margin-top:10px;font:.9rem
 .t{overflow-x:auto}table{border-collapse:collapse;font-size:.86rem;min-width:520px;width:100%}th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--mute);font-weight:600}
 a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}small{color:var(--mute)}.ok{color:var(--ok)}.bad{color:var(--bad)}
 </style></head><body><div class="wrap">
-<div><h1>The Window: what it costs to dump each stablecoin right now</h1>
+<div><h1>The Window: a buyer of last resort for stablecoins</h1>
 <p class="sub">A pool that buys a doubted stablecoin at a penalty, up to a hard cap, with no price feed and no operator. Read live from the contract on NEAR testnet.</p></div>
 
-<div class="card"><h2>Discount on the next dollar sold <span id="blk"></span></h2><div id="coins">Loading…</div>
+<div class="card"><h2>The real market right now <span id="eblk"></span></h2><div id="real">Loading Curve 3pool from Ethereum mainnet…</div>
+<p class="sub">Curve's 3pool on Ethereum mainnet holds real USDC, USDT and DAI. Share is each coin's part of the pool (a third each when calm; a dumped coin piles up). Price is what the pool pays for $100,000 of that coin, against the strongest of the three.</p></div>
+
+<div class="card"><h2>The Window contract (NEAR testnet): penalty on the next dollar sold <span id="blk"></span></h2><div id="coins">Loading…</div>
 <p class="sub">The bar is how much of each coin's window is used. Empty: the pool buys at $1.00. Full: the pool refuses the coin.</p></div>
 
 <div class="card"><h2>Pool</h2>
@@ -30,19 +33,20 @@ a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}sma
 <div class="q"><select id="leg"><option value="0">Sell USDC</option><option value="1">Sell USDT</option><option value="2">Sell DAI</option></select><input id="amt" inputmode="decimal" value="10" aria-label="amount in dollars"><button id="go">Quote</button></div>
 <div class="ans" id="ans">Amount in dollars. The answer comes from the contract.</div></div>
 
-<div class="card"><h2>Three real scares, replayed on a $3M pool</h2><div class="t"><table>
-<tr><th>Scare</th><th>Market low</th><th>Sold to window</th><th>Avg penalty</th><th>Pool at the low</th><th>After recovery</th><th>If the coin had died</th></tr>
-<tr><td>Nov 2022, USDT</td><td>$0.980</td><td>$200,000</td><td>1.00%</td><td>-0.73%</td><td class="ok">+0.07%</td><td class="bad">-39.9%</td></tr>
-<tr><td>Mar 2023, USDC</td><td>$0.880</td><td>$500,000</td><td>2.50%</td><td>-5.58%</td><td class="ok">+0.42%</td><td class="bad">-49.6%</td></tr>
-<tr><td>Jun 2023, USDT</td><td>$0.997</td><td>$30,000</td><td>0.15%</td><td>-0.10%</td><td class="ok">+0.00%</td><td class="bad">-34.3%</td></tr>
-</table></div><p class="sub">Computed by the contract's own code (<code>cargo test replay</code>). Sellers are assumed to sell while the window's penalty is below the market's. The same three sales were then made on the live contract at 1:3333 scale; the board above shows where they left it.</p></div>
+<div class="card"><h2>Three real scares, hour by hour, on real pool data</h2><div class="t"><table>
+<tr><th>Scare</th><th>Real low</th><th>Sold to window</th><th>Penalties</th><th>Pool at its lowest</th><th>At the last hour</th><th>Once back at $1</th></tr>
+<tr><td>Nov 2022 (FTX), 96 h</td><td>USDT $0.9802</td><td>$222,998</td><td>$1,942</td><td>-0.74%</td><td>-0.02%</td><td class="ok">+0.06%</td></tr>
+<tr><td>Mar 2023 (SVB), 84 h</td><td>USDC $0.8777</td><td>$1,000,000</td><td>$25,000</td><td class="bad">-11.08%</td><td class="ok">+0.34%</td><td class="ok">+0.83%</td></tr>
+<tr><td>Jun 2023, 48 h</td><td>USDT $0.9965</td><td>$38,000</td><td>$61</td><td>-0.12%</td><td>-0.04%</td><td class="ok">+0.00%</td></tr>
+</table></div><p class="sub">Input: hourly balances and exchange rates of Curve's 3pool read from Ethereum archive nodes (229 data points, in the repo). The contract's own code is run on a $3M pool: each hour holders sell a coin to the window while its penalty is below the market's discount. In March 2023 both USDC and DAI were dumped, so two windows filled and the pool sat 11% under before recovering.</p></div>
 
 <div class="card links"><h2>Evidence</h2>
 <a href="https://testnet.nearblocks.io/address/pool.window-mwhc6re2.testnet">Contract: pool.window-mwhc6re2.testnet</a>
 <a href="https://testnet.nearblocks.io/txns/4JiT5r3K49UmAUx59P93pR1JRqQR5mszHquMZxChteV6">Keys deleted: nobody can change it</a>
 <a href="https://testnet.nearblocks.io/txns/7SQHGGVYS7hpdDLGkTG2GvyFfNojYfoCng1Zi7Vqhw1S">The USDC sale that filled the window</a>
 <a href="https://github.com/Ashioya-ui/susds/tree/main/near/window">Source, proofs and replays</a>
-<small>Testnet. The three coins are test tokens standing in for USDC, USDT and DAI and have no value. By William Alubokho Ashioya.</small></div>
+<a href="https://etherscan.io/address/0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7">Curve 3pool on Ethereum (the real data)</a>
+<small>The market data and the replays are real. The contract runs on NEAR testnet with test tokens standing in for USDC, USDT and DAI. By William Alubokho Ashioya.</small></div>
 </div>
 <script>
 const C="pool.window-mwhc6re2.testnet",RPC="https://test.rpc.fastnear.com",NM=["USDC","USDT","DAI"];
@@ -61,5 +65,18 @@ document.getElementById("go").onclick=async()=>{const a=document.getElementById(
   if(!(amt>0)){a.textContent="Enter an amount.";return;}a.textContent="Asking the contract…";
   try{const v=(await view("quote_sell",{leg,amount:String(amt)})).v;
     a.innerHTML=v.ok?`Sell ${usd(amt)} of ${NM[leg]}<br>You receive <b class="ok">${usd(v.out)}</b> in another coin<br>Penalty kept by the pool: ${usd(v.fee)} (${(Number(v.average_discount_bps)/100).toFixed(2)}% on average)`:`<span class="bad">Refused: ${v.reason}</span>`;}catch(e){a.textContent=e.message;}};
-load();
+const ETH=["https://rpc.mevblocker.io","https://ethereum-rpc.publicnode.com","https://eth-mainnet.public.blastapi.io","https://eth.drpc.org"],POOL="0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7";
+const W=v=>BigInt(v).toString(16).padStart(64,"0");
+async function eth(calls){let err;for(const u of ETH){try{const body=calls.map((d,i)=>({jsonrpc:"2.0",id:i,method:d==="blk"?"eth_blockNumber":"eth_call",params:d==="blk"?[]:[{to:POOL,data:d},"latest"]}));
+  const r=await(await fetch(u,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+  if(Array.isArray(r)&&r.every(x=>x.result))return r.sort((a,b)=>a.id-b.id).map(x=>x.result);err=JSON.stringify(r).slice(0,120);}catch(e){err=e.message;}}throw new Error(err);}
+async function real(){try{const dy=(i,j,dec)=>"0x5e0d443f"+W(i)+W(j)+W(100000n*10n**BigInt(dec));
+  const r=await eth(["0x4903b0d1"+W(0),"0x4903b0d1"+W(1),"0x4903b0d1"+W(2),dy(1,2,6),dy(0,2,18),"blk"]);
+  const bal=[Number(BigInt(r[1]))/1e6,Number(BigInt(r[2]))/1e6,Number(BigInt(r[0])/10n**12n)/1e6],tot=bal[0]+bal[1]+bal[2];
+  const v=[Number(BigInt(r[3]))/1e11,1,Number(BigInt(r[4]))/1e11],top=Math.max(...v);
+  document.getElementById("eblk").textContent="· Ethereum block "+parseInt(r[5],16).toLocaleString();
+  document.getElementById("real").innerHTML=NM.map((n,i)=>{const sh=100*bal[i]/tot,pr=v[i]/top;
+    return `<div class="coin"><b>${n}</b><div><div class="meter"><i style="width:${sh}%;background:var(--a)"></i></div><small>${sh.toFixed(1)}% of the pool · $${(bal[i]/1e6).toFixed(1)}M</small></div><div class="d ${pr<0.999?"bad":"ok"}">$${pr.toFixed(4)}</div></div>`}).join("");
+ }catch(e){document.getElementById("real").textContent="Could not reach Ethereum mainnet: "+e.message;}}
+load();real();
 </script></body></html>

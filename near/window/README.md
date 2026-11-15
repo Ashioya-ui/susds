@@ -52,7 +52,27 @@ calls 600000, accepted 340697, sales 160582
 test result: ok. 4 passed; 0 failed
 ```
 
-## Replays
+## Replay on real data
+
+`data/3pool.json` holds 229 hourly readings of Curve's 3pool on Ethereum mainnet (real USDC, USDT, DAI) across the three scares: balances and the pool's own exchange rate for a $100,000 trade, read from archive nodes by `data/fetch_3pool.py`. What the chain shows:
+
+| Scare | Weakest coin, lowest hourly rate | USDT share of the pool |
+|---|---|---|
+| Nov 2022 (FTX) | USDT $0.9802 | up to 86.2% |
+| Mar 2023 (SVB) | USDC $0.8777, DAI $0.8821 | down to 1.4% |
+| Jun 2023 | USDT $0.9965 | up to 75.3% |
+
+The test `replay_real_3pool_data` runs the contract's code on a $3,000,000 pool against that data. Each hour, holders sell a coin to the window while its marginal penalty is below the discount the market shows.
+
+| Scare | Sold to window | Window used (USDC / USDT / DAI) | Penalties | Pool at its lowest | At the last hour | Once back at $1 |
+|---|---|---|---|---|---|---|
+| Nov 2022, 96 h | $222,998 | 0% / 39% / 0% | $1,942 | −0.74% | −0.02% | +0.06% |
+| Mar 2023, 84 h | $1,000,000 | 100% / 0% / 100% | $25,000 | −11.08% | +0.34% | +0.83% |
+| Jun 2023, 48 h | $38,000 | 0% / 7% / 0% | $61 | −0.12% | −0.04% | +0.00% |
+
+March 2023 is the hard case: USDC and DAI were dumped together, both windows filled, and the pool sat 11% under par before ending the period 0.34% up. The pool size is a model input; the prices and balances are not.
+
+## Replays with assumed lows
 
 Pool of $3,000,000 in three coins, `d0 = 0`, `dmax = 5%`, window one sixth of the pool per coin. Sellers sell the doubted coin while the window's marginal discount is below the market's discount at the reported low. Printed by the test `replay_three_scares`:
 
@@ -112,7 +132,7 @@ near call usd-b.prusd-mwgt5ryd.testnet ft_transfer_call '{"receiver_id":"'$P'","
 - The window buys outright; it does not lend. Whether sellers should hold a right to repurchase at par is open.
 - After a scare the pool keeps the coin it bought until someone swaps it out at par. There is no incentive to do so, so the window reopens slowly.
 - If two coins are dumped for the third, the third runs out. In March 2023 USDC and DAI fell together because DAI held USDC; the coins in a pool should not hold each other.
-- The replays assume sellers stop when the window's penalty reaches the market's discount; real order flow was not available.
+- The replays use real hourly pool prices but assume sellers use the window whenever it is cheaper than the market; real order flow was not available. The pool size is assumed.
 - Proofs are written arguments checked by randomized tests, not machine-checked.
 
 Author: William Alubokho Ashioya, Nairobi.

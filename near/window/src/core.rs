@@ -295,4 +295,46 @@ mod tests {
             assert!(c.h[0] <= s / 3 + k);                 // Theorem 1 is what bounds the loss
         }
     }
+
+    /// The same rule run on what really happened: hourly balances and exchange rates of Curve's
+    /// 3pool on Ethereum mainnet during the three scares (data/3pool.json, fetched from archive
+    /// nodes by data/fetch_3pool.py). Each hour, holders sell a coin to the window while the
+    /// window's marginal discount is below the discount the market shows for that coin.
+    #[test]
+    fn replay_real_3pool_data() {
+        use near_sdk::serde_json::{from_str, Value};
+        let d: Value = from_str(include_str!("../data/3pool.json")).unwrap();
+        println!("scare | hours | weakest coin and its real low | sold to window | window used USDC/USDT/DAI | penalties | pool at its lowest | pool at the last hour | pool at par");
+        for sc in d["scares"].as_array().unwrap() {
+            let mut c = Core::new(3, 0, 500, 6); // legs: 0 USDC, 1 USDT, 2 DAI
+            c.deposit(3_000_000_000_000).unwrap();
+            let (s, k) = (c.s as f64, c.k());
+            let (mut sold, mut fees, mut low, mut worst) = (0u128, 0u128, 0.0f64, (1.0f64, 0usize));
+            let mut last = 0.0;
+            let pts = sc["points"].as_array().unwrap();
+            for p in pts {
+                let v = [p["usdc_in_usdt"].as_f64().unwrap(), 1.0, p["dai_in_usdt"].as_f64().unwrap()];
+                let top = v.iter().cloned().fold(0.0, f64::max);
+                let price: Vec<f64> = v.iter().map(|x| x / top).collect();
+                for i in 0..3 {
+                    if price[i] < worst.0 { worst = (price[i], i); }
+                    let bps = ((1.0 - price[i]) * 10_000.0) as u128;
+                    let target = k.min(k * bps / c.dmax_bps);
+                    let e = c.excess(i);
+                    if target > e {
+                        let mut order: Vec<usize> = (0..3).filter(|j| *j != i).collect();
+                        order.sort_by(|a, b| price[*b].partial_cmp(&price[*a]).unwrap());
+                        for j in order {
+                            if let Ok((fee, _)) = c.swap(i, j, target - e) { sold += target - e; fees += fee; break; }
+                        }
+                    }
+                }
+                last = (0..3).map(|i| c.h[i] as f64 * price[i]).sum::<f64>() / s - 1.0;
+                if last < low { low = last; }
+            }
+            let used: Vec<String> = (0..3).map(|i| format!("{:.0}%", c.excess(i) as f64 / k as f64 * 100.0)).collect();
+            println!("{} | {} | {} ${:.4} | ${:.0} | {} | ${:.0} | {:+.2}% | {:+.2}% | {:+.2}%", sc["name"].as_str().unwrap(), pts.len() - 1,
+                ["USDC", "USDT", "DAI"][worst.1], worst.0, sold as f64 / 1e6, used.join(" / "), fees as f64 / 1e6, low * 100.0, last * 100.0, (c.total() as f64 / s - 1.0) * 100.0);
+        }
+    }
 }
