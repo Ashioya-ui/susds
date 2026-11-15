@@ -33,6 +33,14 @@ a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}sma
 <div class="btns"><button data-k="0">USDC</button><button data-k="1">USDT</button><button data-k="2">DAI</button></div>
 <div id="res"><p class="sub" style="margin-top:12px">In March 2023 USDC dropped to $0.88 and took DAI down with it.</p></div></div>
 
+<div class="card"><h2>Replay three real scares</h2>
+<div class="try">
+<button data-k="1" data-note="Nov 2022, FTX week: holders dumped USDT until it was 85% of Curve's 3pool. USDT dipped just under $0.98 and did not fail.">Nov 2022: everyone dumps USDT</button>
+<button data-k="0" data-note="Mar 2023, SVB weekend: holders fled USDC. Curve's 3pool was left with under 7% USDT and over 46% each of USDC and DAI. USDC recovered within days. DAI fell too because DAI itself held USDC, so a reserve should not mix coins that hold each other.">Mar 2023: everyone dumps USDC</button>
+<button data-k="1" data-note="Jun 2023: USDT rose past 70% of Curve's 3pool and touched $0.997. It did not fail.">Jun 2023: everyone dumps USDT again</button>
+</div><p class="sub" id="note" style="margin-top:10px">Each replay asks the live contract to pay every holder without the dumped coin. The result shows in the panel above.</p>
+<p class="sub">In all three scares the dumped coin came back to $1. Whoever funds PRUSD's extra reserve is selling holders the right to leave any one coin at $1, and is left holding the dumped coin. Three times out of three that coin recovered.</p></div>
+
 <div class="card"><h2>Try to break it</h2><div class="try">
 <button data-t="mint">Print $5 of PRUSD without enough reserve</button>
 <button data-t="run">Cash out $0.30 taking only USDC (grab the best coin first)</button>
@@ -44,6 +52,9 @@ a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}sma
 <a href="https://testnet.nearblocks.io/txns/FR2Q4u8ce3MNT1uo7iiPXy9pMB6TKfiSxYmLGQmmMFM9">Keys deleted: nobody, including me, can change the code</a>
 <a href="https://testnet.nearblocks.io/txns/BmdMrzNx8K3y1u2485wtXERKwcXC7A1HtU9BYA1vX1Rk">A real cash-out paid in full with DAI left out</a>
 <a href="https://github.com/Ashioya-ui/susds/tree/main/near">Source code and proofs</a>
+<a href="https://www.coindesk.com/markets/2022/11/10/tether-dominates-curves-3pool-as-dai-usdc-account-for-just-20-of-liquidity/amp/">Data: Nov 2022 (CoinDesk)</a>
+<a href="https://hotfix.coindesk.com/business/2023/03/10/defi-protocol-curves-500m-stablecoin-pool-hammered-as-traders-flee-usdc">Data: Mar 2023 (CoinDesk)</a>
+<a href="https://www.theblock.co/post/234822/tether-depeg-curve-3pool">Data: Jun 2023 (The Block)</a>
 <small>This runs on NEAR testnet. The three reserve tokens are test tokens standing in for USDC, USDT and DAI; they have no value. Built at NEAR Hackathon 2026 by William Alubokho Ashioya.</small></div>
 </div>
 <script>
@@ -59,7 +70,7 @@ function draw(dead){const h=S.holdings.map(Number),t=h.reduce((a,b)=>a+b,0),s=Nu
   document.getElementById("buf").textContent=usd(S.buffer_equity)+" ("+(Number(S.buffer_bps)/100).toFixed(0)+"% of supply)";
   document.getElementById("safe").textContent=S.safe_against_any_one_leg_failing?"YES":"NO";}
 async function load(){try{const r=await view("state");S=r.v;document.getElementById("blk").textContent="· block "+r.h.toLocaleString();draw(-1);}catch(e){document.getElementById("ans").textContent="Could not reach NEAR testnet: "+e.message;}}
-document.querySelectorAll("[data-k]").forEach(b=>b.onclick=async()=>{const k=+b.dataset.k;document.querySelectorAll("[data-k]").forEach(x=>x.classList.toggle("on",x===b));draw(k);
+document.querySelectorAll("[data-k]").forEach(b=>b.onclick=async()=>{const k=+b.dataset.k;document.querySelectorAll("[data-k]").forEach(x=>x.classList.toggle("on",x===b));draw(k);if(b.dataset.note){document.getElementById("note").textContent=b.dataset.note;document.getElementById("res").scrollIntoView({behavior:"smooth",block:"center"});}
   const s=S.prusd_supply,res=document.getElementById("res");res.innerHTML='<p class="sub" style="margin-top:12px">Asking the contract…</p>';
   try{const q=(await view("quote_redeem",{coins:s,avoid_leg:k})).v,chk=(await view("check_redeem",{coins:s,take:q})).v,paid=q.reduce((a,b)=>a+Number(b),0);
   res.innerHTML=`<div class="big ${paid>=Number(s)-3?"ok":"bad"}">PRUSD pays ${usd(paid)} of ${usd(s)}</div><div class="row"><span>Paid from</span><span>${q.map((x,i)=>i===k?"":NM[i]+" "+usd(x)).filter(Boolean).join(" + ")}</span></div><div class="row"><span>Taken from ${NM[k]}</span><span>$0.00</span></div><div class="row"><span>Contract accepts this payout</span><span>${chk.startsWith('ok')?'yes':chk}</span></div><div class="big bad" style="font-size:1.05rem;margin-top:14px">A stablecoin holding only ${NM[k]} would pay $0.00</div>`;}catch(e){res.textContent=e.message;}});

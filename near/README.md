@@ -12,6 +12,23 @@ In March 2023 USDC fell to $0.88 and DAI fell with it, because DAI's reserve cou
 
 The note *Depegs are holes* (Ashioya, November 2026) shows why. A stablecoin's off-chain redemption is the one link in its price graph that no on-chain trade can bound. So PRUSD does not try to price that link. It is built to survive losing it.
 
+## What the data shows
+
+Curve's 3pool lets holders choose which of USDC, USDT and DAI to take out, as PRUSD does. Three scares, as reported at the time:
+
+| Scare | Holders dumped | Pool share reported | Low | Did the coin fail? |
+|---|---|---|---|---|
+| Nov 2022 (FTX) | USDT | USDT 85% of the pool | just under $0.98 | No |
+| Mar 2023 (SVB) | USDC, and DAI because DAI held USDC | USDT under 7%, USDC and DAI over 46% each | USDC $0.88 | No |
+| Jun 2023 | USDT | USDT over 70% | $0.997 | No |
+
+Holders leave a doubted coin fast and in size, a different coin each time, and all three times the coin came back. Two consequences for the design:
+
+- "Holders are leaving coin X" must not trigger anything in the contract. It would have fired wrongly three times out of three, and one large trader can fake it. PRUSD has no trigger: leaving a coin is just a redemption.
+- The buffer is an underwriting business. Buffer shareholders sell every holder the right to leave any one reserve coin at one dollar, and are left holding the coin that was dumped. In these three scares that coin recovered, so they would have kept the fee and lost nothing. They lose only if a reserve coin truly fails.
+
+Sources: [CoinDesk, Nov 2022](https://www.coindesk.com/markets/2022/11/10/tether-dominates-curves-3pool-as-dai-usdc-account-for-just-20-of-liquidity/amp/), [CoinDesk, Mar 2023](https://hotfix.coindesk.com/business/2023/03/10/defi-protocol-curves-500m-stablecoin-pool-hammered-as-traders-flee-usdc), [The Block, Jun 2023](https://www.theblock.co/post/234822/tether-depeg-curve-3pool).
+
 ## How it works
 
 The reserve is held in `n` legs, one per reserve stablecoin, in equal parts. There are two claims on it:
@@ -121,6 +138,8 @@ PRUSD is meant as the settlement asset for mobile money to mobile money payments
 
 - Testnet. The reserve legs here are valueless test tokens; on mainnet they would be the USD stablecoins issued on NEAR.
 - The buffer is large: with `n` equal legs it must be `1/(n−1)` of supply (50% for three legs, 33% for four). Buffer holders are paid only the 0.10% mint fee. That is the cost of surviving a total failure without an oracle.
+- The reserve coins must not hold each other. In March 2023 DAI fell with USDC because DAI held USDC; a reserve of USDC and DAI is one risk, not two.
+- Next step: separate buffer shares per reserve coin, so the fee each one needs becomes an on-chain price for that issuer's risk. Not built.
 - It covers the failure of one leg. Two legs failing together are shared pro rata.
 - A rejected transaction shows on the explorer as a generic WebAssembly trap; use the `check_*` views for the reason.
 - The contract pays for balance storage, and buffer shares are not transferable.

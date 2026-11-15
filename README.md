@@ -13,6 +13,8 @@
 
 **Also on NEAR testnet** (NEAR Hackathon 2026, Real-World Money): `coin.prusd-mwgt5ryd.testnet`, multi-reserve, survives the failure of any one reserve coin. See [`near/`](near/README.md).
 
+**The Window** (NEAR testnet): a discount window for stablecoins. A pool buys a doubted coin at a rising penalty up to a hard cap, with no price feed. See [`near/window/`](near/window/README.md) and the [live board](https://ashioya-ui.github.io/susds/window.html).
+
 ## Three rules, one contract
 
 1. **Atomic par.** `mint(x)`: x USDC in, x PRUSD out. `redeem(x)`: x PRUSD in, `x · min(1, B)` USDC out, where `B = reserve / supply`. Both are one call, at any time.

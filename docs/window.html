@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Window: live discounts</title>
+<style>
+:root{--bg:#0e1512;--card:#16201b;--fg:#e8efe9;--mute:#93a39a;--line:#283530;--ok:#3ecf8e;--bad:#ff6b5e;--warn:#f2b84b;--a:#5aa9ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:600px;margin:0 auto;padding:22px 16px 48px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:1.45rem;margin:0}h2{font-size:.8rem;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+.sub{color:var(--mute);margin:4px 0 0;font-size:.92rem}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.coin{display:grid;grid-template-columns:64px 1fr 84px;gap:10px;align-items:center;padding:8px 0;font-variant-numeric:tabular-nums}
+.coin b{font-size:1.05rem}.d{font-size:1.25rem;font-weight:750;text-align:right}
+.meter{height:12px;border-radius:99px;background:#0a100d;overflow:hidden}.meter i{display:block;height:100%;border-radius:99px;background:var(--warn);transition:width .5s}
+.row{display:flex;justify-content:space-between;gap:10px;padding:3px 0;font-variant-numeric:tabular-nums}
+.q{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}select,input,button{font:inherit;color:var(--fg);background:#0f1814;border:1.5px solid var(--line);border-radius:10px;padding:10px;min-width:0;width:100%}
+button{font-weight:650;cursor:pointer;width:auto}.ans{margin-top:10px;font:.9rem/1.5 ui-monospace,Menlo,Consolas,monospace;background:#0a100d;border:1px solid var(--line);border-radius:10px;padding:10px;min-height:44px;overflow-wrap:anywhere}
+.t{overflow-x:auto}table{border-collapse:collapse;font-size:.86rem;min-width:520px;width:100%}th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--mute);font-weight:600}
+a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}small{color:var(--mute)}.ok{color:var(--ok)}.bad{color:var(--bad)}
+</style></head><body><div class="wrap">
+<div><h1>The Window: what it costs to dump each stablecoin right now</h1>
+<p class="sub">A pool that buys a doubted stablecoin at a penalty, up to a hard cap, with no price feed and no operator. Read live from the contract on NEAR testnet.</p></div>
+
+<div class="card"><h2>Discount on the next dollar sold <span id="blk"></span></h2><div id="coins">Loading…</div>
+<p class="sub">The bar is how much of each coin's window is used. Empty: the pool buys at $1.00. Full: the pool refuses the coin.</p></div>
+
+<div class="card"><h2>Pool</h2>
+<div class="row"><span>Value per share at par</span><b id="pps">…</b></div>
+<div class="row"><span>Penalties earned by shareholders</span><b id="fees">…</b></div>
+<div class="row"><span>Most the pool will hold of one coin</span><b id="cap">…</b></div></div>
+
+<div class="card"><h2>Ask the contract for a price</h2>
+<div class="q"><select id="leg"><option value="0">Sell USDC</option><option value="1">Sell USDT</option><option value="2">Sell DAI</option></select><input id="amt" inputmode="decimal" value="10" aria-label="amount in dollars"><button id="go">Quote</button></div>
+<div class="ans" id="ans">Amount in dollars. The answer comes from the contract.</div></div>
+
+<div class="card"><h2>Three real scares, replayed on a $3M pool</h2><div class="t"><table>
+<tr><th>Scare</th><th>Market low</th><th>Sold to window</th><th>Avg penalty</th><th>Pool at the low</th><th>After recovery</th><th>If the coin had died</th></tr>
+<tr><td>Nov 2022, USDT</td><td>$0.980</td><td>$200,000</td><td>1.00%</td><td>-0.73%</td><td class="ok">+0.07%</td><td class="bad">-39.9%</td></tr>
+<tr><td>Mar 2023, USDC</td><td>$0.880</td><td>$500,000</td><td>2.50%</td><td>-5.58%</td><td class="ok">+0.42%</td><td class="bad">-49.6%</td></tr>
+<tr><td>Jun 2023, USDT</td><td>$0.997</td><td>$30,000</td><td>0.15%</td><td>-0.10%</td><td class="ok">+0.00%</td><td class="bad">-34.3%</td></tr>
+</table></div><p class="sub">Computed by the contract's own code (<code>cargo test replay</code>). Sellers are assumed to sell while the window's penalty is below the market's. The same three sales were then made on the live contract at 1:3333 scale; the board above shows where they left it.</p></div>
+
+<div class="card links"><h2>Evidence</h2>
+<a href="https://testnet.nearblocks.io/address/pool.window-mwhc6re2.testnet">Contract: pool.window-mwhc6re2.testnet</a>
+<a href="https://testnet.nearblocks.io/txns/4JiT5r3K49UmAUx59P93pR1JRqQR5mszHquMZxChteV6">Keys deleted: nobody can change it</a>
+<a href="https://testnet.nearblocks.io/txns/7SQHGGVYS7hpdDLGkTG2GvyFfNojYfoCng1Zi7Vqhw1S">The USDC sale that filled the window</a>
+<a href="https://github.com/Ashioya-ui/susds/tree/main/near/window">Source, proofs and replays</a>
+<small>Testnet. The three coins are test tokens standing in for USDC, USDT and DAI and have no value. By William Alubokho Ashioya.</small></div>
+</div>
+<script>
+const C="pool.window-mwhc6re2.testnet",RPC="https://test.rpc.fastnear.com",NM=["USDC","USDT","DAI"];
+const usd=u=>"$"+(Number(u)/1e6).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+async function view(m,args={}){const r=await fetch(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"query",params:{request_type:"call_function",finality:"final",account_id:C,method_name:m,args_base64:btoa(JSON.stringify(args))}})});
+  const j=await r.json();if(!j.result||!j.result.result)throw new Error(JSON.stringify(j.error||j));return{v:JSON.parse(new TextDecoder().decode(new Uint8Array(j.result.result))),h:j.result.block_height};}
+async function load(){try{const r=await view("state"),s=r.v,K=Number(s.window_size);
+  document.getElementById("blk").textContent="· block "+r.h.toLocaleString();
+  document.getElementById("coins").innerHTML=NM.map((n,i)=>{const u=Number(s.window_used[i]),d=Number(s.discount_now_bps[i])/100,full=u>=K;
+    return `<div class="coin"><b>${n}</b><div><div class="meter"><i style="width:${Math.min(100,100*u/K)}%;${full?"background:var(--bad)":""}"></i></div><small>${usd(u)} of ${usd(K)} used${full?" · full, refusing more":""}</small></div><div class="d ${d>0?"":"ok"}">${d.toFixed(2)}%</div></div>`}).join("");
+  document.getElementById("pps").textContent="$"+(Number(s.par_value_per_share_ppm)/1e6).toFixed(6);
+  document.getElementById("fees").textContent=usd(s.fees_earned);
+  document.getElementById("cap").textContent=(100/3+100/Number(s.cap_div)).toFixed(0)+"% of the pool";
+ }catch(e){document.getElementById("coins").textContent="Could not reach NEAR testnet: "+e.message;}}
+document.getElementById("go").onclick=async()=>{const a=document.getElementById("ans"),leg=+document.getElementById("leg").value,amt=Math.round(parseFloat(document.getElementById("amt").value)*1e6);
+  if(!(amt>0)){a.textContent="Enter an amount.";return;}a.textContent="Asking the contract…";
+  try{const v=(await view("quote_sell",{leg,amount:String(amt)})).v;
+    a.innerHTML=v.ok?`Sell ${usd(amt)} of ${NM[leg]}<br>You receive <b class="ok">${usd(v.out)}</b> in another coin<br>Penalty kept by the pool: ${usd(v.fee)} (${(Number(v.average_discount_bps)/100).toFixed(2)}% on average)`:`<span class="bad">Refused: ${v.reason}</span>`;}catch(e){a.textContent=e.message;}};
+load();
+</script></body></html>
