@@ -17,7 +17,8 @@ button:hover{border-color:var(--mute)}button.on{border-color:var(--bad);color:va
 .big{font-size:1.5rem;font-weight:750;margin:12px 0 2px}.ok{color:var(--ok)}.bad{color:var(--bad)}
 .tag{display:inline-block;border-radius:99px;padding:3px 10px;font-size:.8rem;font-weight:700;background:rgba(62,207,142,.14);color:var(--ok)}
 .try{display:grid;grid-template-columns:1fr;gap:8px}.ans{font:.86rem/1.4 ui-monospace,Menlo,Consolas,monospace;background:#0a100d;border:1px solid var(--line);border-radius:10px;padding:10px;min-height:42px;overflow-wrap:anywhere}
-a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}small{color:var(--mute)}
+a{color:var(--a)}.tb{overflow-x:auto}table{border-collapse:collapse;font-size:.88rem;width:100%;min-width:430px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:600}.meter{height:12px;border-radius:99px;background:#0a100d;overflow:hidden}.meter i{display:block;height:100%;border-radius:99px;background:var(--a)}.coin{display:grid;grid-template-columns:56px 1fr 84px;gap:10px;align-items:center;padding:7px 0}.coin .d{font-weight:750;text-align:right}
+.links a{display:block;padding:3px 0;overflow-wrap:anywhere}small{color:var(--mute)}
 </style></head><body><div class="wrap">
 <div><h1>If USDC, USDT or DAI collapses, PRUSD still pays $1</h1>
 <p class="sub">PRUSD holds all three. Pick one to collapse and see what the contract on NEAR pays out. The numbers come from the live contract.</p></div>
@@ -41,6 +42,16 @@ a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}sma
 </div><p class="sub" id="note" style="margin-top:10px">Each replay asks the live contract to pay every holder without the dumped coin. The result shows in the panel above.</p>
 <p class="sub">In all three scares the dumped coin came back to $1. Whoever funds PRUSD's extra reserve is selling holders the right to leave any one coin at $1, and is left holding the dumped coin. Three times out of three that coin recovered.</p></div>
 
+<div class="card"><h2>The real market right now <span id="eblk"></span></h2><div id="real">Loading Curve 3pool from Ethereum mainnet…</div>
+<p class="sub">Real USDC, USDT and DAI in Curve's 3pool on Ethereum. Price is what the pool pays for $100,000 of each coin, against the strongest of the three.</p></div>
+
+<div class="card"><h2>PRUSD through three real scares</h2><div class="tb"><table>
+<tr><th>Scare</th><th>Weakest coin fell to</th><th>A redeemed PRUSD was worth, worst hour</th></tr>
+<tr><td>Nov 2022 (FTX)</td><td class="bad">USDT $0.9802</td><td class="ok">$0.9998</td></tr>
+<tr><td>Mar 2023 (SVB)</td><td class="bad">USDC $0.8777, DAI $0.8821</td><td>$0.9411</td></tr>
+<tr><td>Jun 2023</td><td class="bad">USDT $0.9965</td><td class="ok">$0.9999</td></tr>
+</table></div><p class="sub">The contract's code run hour by hour on 229 real readings of Curve's 3pool from Ethereum. PRUSD covers one coin failing. In March 2023 two fell together, because DAI itself held USDC, so PRUSD paid $0.94 at the worst hour against $0.88 for either coin alone, and $1.00 again once they recovered. The lesson for the reserve: never hold two coins that hold each other.</p></div>
+
 <div class="card"><h2>Try to break it</h2><div class="try">
 <button data-t="mint">Print $5 of PRUSD without enough reserve</button>
 <button data-t="run">Cash out $0.30 taking only USDC (grab the best coin first)</button>
@@ -55,7 +66,7 @@ a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}sma
 <a href="https://www.coindesk.com/markets/2022/11/10/tether-dominates-curves-3pool-as-dai-usdc-account-for-just-20-of-liquidity/amp/">Data: Nov 2022 (CoinDesk)</a>
 <a href="https://hotfix.coindesk.com/business/2023/03/10/defi-protocol-curves-500m-stablecoin-pool-hammered-as-traders-flee-usdc">Data: Mar 2023 (CoinDesk)</a>
 <a href="https://www.theblock.co/post/234822/tether-depeg-curve-3pool">Data: Jun 2023 (The Block)</a>
-<small>This runs on NEAR testnet. The three reserve tokens are test tokens standing in for USDC, USDT and DAI; they have no value. Built at NEAR Hackathon 2026 by William Alubokho Ashioya.</small></div>
+<small>The market data and the scare results are real. The contract runs on NEAR testnet, where the three reserve tokens are test tokens standing in for USDC, USDT and DAI. Built at NEAR Hackathon 2026 by William Alubokho Ashioya.</small></div>
 </div>
 <script>
 const C="coin.prusd-mwgt5ryd.testnet",RPC="https://test.rpc.fastnear.com",COL=["var(--a)","var(--b)","var(--c)"],NM=["USDC","USDT","DAI"];
@@ -77,5 +88,15 @@ document.querySelectorAll("[data-k]").forEach(b=>b.onclick=async()=>{const k=+b.
 const T={mint:["check_mint",{coins:"5000001"}],run:["check_redeem",{coins:"300000",take:["300000","0","0"]}],buf:["check_withdraw_junior",{shares:"0"}]};
 document.querySelectorAll("[data-t]").forEach(b=>b.onclick=async()=>{const a=document.getElementById("ans");a.textContent="Asking the contract…";let[m,args]=T[b.dataset.t];if(m==="check_withdraw_junior")args={shares:S.buffer_shares};
   try{const v=(await view(m,args)).v;a.innerHTML=`<b>${m}(${JSON.stringify(args)})</b><br><span class="${v.startsWith("ok")?"ok":"bad"}">${v}</span>`;}catch(e){a.textContent=e.message;}});
-load();
+const ETH=["https://rpc.mevblocker.io","https://ethereum-rpc.publicnode.com","https://eth-mainnet.public.blastapi.io","https://eth.drpc.org"],POOL="0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7",W=v=>BigInt(v).toString(16).padStart(64,"0");
+async function eth(calls){let err;for(const u of ETH){try{const body=calls.map((d,i)=>({jsonrpc:"2.0",id:i,method:d==="blk"?"eth_blockNumber":"eth_call",params:d==="blk"?[]:[{to:POOL,data:d},"latest"]}));
+  const r=await(await fetch(u,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+  if(Array.isArray(r)&&r.every(x=>x.result))return r.sort((a,b)=>a.id-b.id).map(x=>x.result);err=JSON.stringify(r).slice(0,120);}catch(e){err=e.message;}}throw new Error(err);}
+async function real(){try{const dy=(i,j,dec)=>"0x5e0d443f"+W(i)+W(j)+W(100000n*10n**BigInt(dec));
+  const r=await eth(["0x4903b0d1"+W(0),"0x4903b0d1"+W(1),"0x4903b0d1"+W(2),dy(1,2,6),dy(0,2,18),"blk"]);
+  const bal=[Number(BigInt(r[1]))/1e6,Number(BigInt(r[2]))/1e6,Number(BigInt(r[0])/10n**12n)/1e6],tot=bal[0]+bal[1]+bal[2],v=[Number(BigInt(r[3]))/1e11,1,Number(BigInt(r[4]))/1e11],top=Math.max(...v);
+  document.getElementById("eblk").textContent="· Ethereum block "+parseInt(r[5],16).toLocaleString();
+  document.getElementById("real").innerHTML=NM.map((n,i)=>{const sh=100*bal[i]/tot,pr=v[i]/top;return `<div class="coin"><b>${n}</b><div><div class="meter"><i style="width:${sh}%"></i></div><small>${sh.toFixed(1)}% of the pool · $${(bal[i]/1e6).toFixed(1)}M</small></div><div class="d ${pr<0.999?"bad":"ok"}">$${pr.toFixed(4)}</div></div>`}).join("");
+ }catch(e){document.getElementById("real").textContent="Could not reach Ethereum mainnet: "+e.message;}}
+load();real();
 </script></body></html>

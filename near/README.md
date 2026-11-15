@@ -2,7 +2,7 @@
 
 PRUSD is a USD stablecoin whose reserve is split equally across three USD stablecoins. The contract keeps any two of the three worth at least the whole PRUSD supply, so if one reserve coin goes to zero, every PRUSD still redeems for one dollar from the other two. Redemption uses no price feed: the holder chooses which reserve coins to receive, up to a pro-rata cap on each. The contract account has no access keys, so nobody, including its author, can change the code or move the reserve.
 
-**Live demo:** https://ashioya-ui.github.io/susds/ (pick USDC, USDT or DAI to collapse and see what the live contract pays)
+**Live demo (works now):** https://htmlpreview.github.io/?https://github.com/Ashioya-ui/susds/blob/main/docs/index.html
 
 NEAR Hackathon 2026, track **Real-World Money**. Built 13 to 14 November 2026.
 
@@ -15,6 +15,43 @@ A second contract in this repo, [`window/`](window/README.md), built on the day 
 In March 2023 USDC fell to $0.88 and DAI fell with it, because DAI's reserve could be swapped one for one into USDC. A stablecoin that holds one reserve coin at par inherits that coin's depeg. Price oracles do not solve this: the oracle reports the depeg after holders have already raced to redeem, and whoever redeems first is paid in full while the last holders take the loss.
 
 The note *Depegs are holes* (Ashioya, November 2026) shows why. A stablecoin's off-chain redemption is the one link in its price graph that no on-chain trade can bound. So PRUSD does not try to price that link. It is built to survive losing it.
+
+## What this submission contains
+
+| Capability | Where | Evidence |
+|---|---|---|
+| Stablecoin that survives one reserve coin failing, no price feed | [`prusd/src/core.rs`](prusd/src/core.rs) | 5 properties proved; 600,000 random calls |
+| Mint gate against buffer dilution; buffer shares that earn the mint fee | same | found by 1,560 adversarial sequences on Base mainnet state ([`evolve/`](../evolve)) |
+| Run on real market data | test `replay_real_3pool_data` | 229 hourly readings of Curve's 3pool from Ethereum archive nodes |
+| Live contract, nobody can change it | `coin.prusd-mwgt5ryd.testnet` | access keys deleted on chain |
+| Live board with the real market | [demo](https://htmlpreview.github.io/?https://github.com/Ashioya-ui/susds/blob/main/docs/index.html) | reads NEAR testnet and Ethereum mainnet in the browser |
+| Discount window for the reserve coins (added 15 Nov) | [`window/`](window/README.md) | proofs, real-data replay, shadow run on the live market |
+
+## PRUSD on real data
+
+`cargo test -p prusd --release replay -- --nocapture` runs the contract's code hour by hour on real exchange rates from Curve's 3pool (Ethereum mainnet) during three scares. PRUSD holds USDC, USDT and DAI in equal parts with a 50% buffer; each hour 1% of holders redeem, taking the strongest coins first up to the pro-rata cap.
+
+| Scare | Weakest coin, real hourly low | A redeemed PRUSD was worth, worst hour | Hours paid in full | SAFE at the end |
+|---|---|---|---|---|
+| Nov 2022 (FTX) | USDT $0.9802 | $0.9998 | 97 of 97 | yes |
+| Mar 2023 (SVB) | USDC $0.8777, DAI $0.8821 | $0.9411 | 10 of 85 | yes |
+| Jun 2023 | USDT $0.9965 | $0.9999 | 49 of 49 | yes |
+
+PRUSD is built to cover one reserve coin failing. In November 2022 and June 2023 one coin was doubted and PRUSD redeemed at par throughout. In March 2023 two fell together, because DAI itself held USDC: PRUSD paid $0.94 at the worst hour against $0.88 for either coin alone, and par again after recovery. The reserve must not hold two coins that hold each other.
+
+The same three redemptions were then made on the live contract, each taking coins in the order the real market ranked them at that scare's worst hour:
+
+| Scare | Redeemed | Paid (USDC / USDT / DAI) | Transaction |
+|---|---|---|---|
+| Nov 2022, USDT weakest | 0.06 | 0.0324 / 0 / 0.0276 | [`HXxau8Cy…`](https://testnet.nearblocks.io/txns/HXxau8CyZg4MzDCLye5c7XxCZtcoMV1kAT2BzhseTDsE) |
+| Mar 2023, USDC and DAI weak | 0.06 | 0 / 0.0360 / 0.0240 | [`7qSJe5E1…`](https://testnet.nearblocks.io/txns/7qSJe5E1wT1G7zrxgGzps6b5HWUZqv8ftFzCzF1FQLcG) |
+| Jun 2023, USDT weakest | 0.06 | 0.0365 / 0 / 0.0235 | [`7gntiXoC…`](https://testnet.nearblocks.io/txns/7gntiXoCT2WsfedCA6qThURPjsUZm7DNZ6jSYFSeLx6X) |
+
+The contract is still SAFE after them (supply 0.42, holdings 0.255 / 0.288 / 0.388). These three transactions were made on 15 November, after the development deadline, against the contract deployed on 14 November.
+
+## Where it fits
+
+Card networks and AI agent wallets are moving settlement onto stablecoins, which concentrates more payments on one or two issuers. PRUSD is a settlement dollar that does not depend on any single one of them, and it does so without a price feed or an operator.
 
 ## What the data shows
 

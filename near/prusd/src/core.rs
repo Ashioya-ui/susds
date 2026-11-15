@@ -243,4 +243,41 @@ mod fuzz {
         println!("calls {calls}, accepted {accepted}, leg failures checked {failures}");
         assert!(accepted > 50_000 && failures > 5_000);
     }
+
+    /// PRUSD on what really happened: hourly exchange rates of Curve's 3pool on Ethereum mainnet
+    /// during three scares (../window/data/3pool.json, read from archive nodes). PRUSD holds
+    /// USDC, USDT and DAI in equal parts with a 50% buffer. Every hour 1% of holders redeem,
+    /// each taking the strongest coins first, up to the pro-rata cap on each.
+    #[test]
+    fn replay_real_3pool_data() {
+        use near_sdk::serde_json::{from_str, Value};
+        let d: Value = from_str(include_str!("../../window/data/3pool.json")).unwrap();
+        println!("scare | weakest coin, real low | worst hour: a redeemed PRUSD is worth | redemptions paid in full | still SAFE at the end | PRUSD left, backing at last-hour prices");
+        for sc in d["scares"].as_array().unwrap() {
+            let mut c = Core::new(3); // legs: 0 USDC, 1 USDT, 2 DAI
+            c.fund(1_000_000_000_002).unwrap();
+            c.mint(1_999_999_999_998).unwrap();
+            let (mut worst_coin, mut worst_val, mut full, mut n) = ((1.0f64, 0usize), 1.0f64, 0u32, 0u32);
+            let mut price = vec![1.0; 3];
+            for p in sc["points"].as_array().unwrap() {
+                let v = [p["usdc_in_usdt"].as_f64().unwrap(), 1.0, p["dai_in_usdt"].as_f64().unwrap()];
+                let top = v.iter().cloned().fold(0.0, f64::max);
+                price = v.iter().map(|x| x / top).collect();
+                for i in 0..3 { if price[i] < worst_coin.0 { worst_coin = (price[i], i); } }
+                let x = c.s / 100;
+                let mut order = vec![0usize, 1, 2];
+                order.sort_by(|a, b| price[*b].partial_cmp(&price[*a]).unwrap());
+                let (mut take, mut left) = (vec![0u128; 3], x);
+                for k in order { let t = left.min(x * c.h[k] / c.s); take[k] = t; left -= t; }
+                c.redeem(x, &take).unwrap();
+                let val = (0..3).map(|k| take[k] as f64 * price[k]).sum::<f64>() / x as f64;
+                n += 1;
+                if val >= 0.9995 { full += 1; }
+                if val < worst_val { worst_val = val; }
+            }
+            let backing = ((0..3).map(|k| c.h[k] as f64 * price[k]).sum::<f64>() / c.s as f64).min(1.0);
+            println!("{} | {} ${:.4} | ${:.4} | {} of {} | {} | ${:.0}, ${:.4} per coin", sc["name"].as_str().unwrap(), ["USDC", "USDT", "DAI"][worst_coin.1], worst_coin.0,
+                worst_val, full, n, c.safe(), c.s as f64 / 1e6, backing);
+        }
+    }
 }
