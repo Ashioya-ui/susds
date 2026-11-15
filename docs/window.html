@@ -21,6 +21,9 @@ a{color:var(--a)}.links a{display:block;padding:3px 0;overflow-wrap:anywhere}sma
 <div class="card"><h2>The real market right now <span id="eblk"></span></h2><div id="real">Loading Curve 3pool from Ethereum mainnet…</div>
 <p class="sub">Curve's 3pool on Ethereum mainnet holds real USDC, USDT and DAI. Share is each coin's part of the pool (a third each when calm; a dumped coin piles up). Price is what the pool pays for $100,000 of that coin, against the strongest of the three.</p></div>
 
+<div class="card"><h2>Shadow run on the live market</h2><div id="shadow">Loading…</div>
+<p class="sub">A $3M shadow pool following the Window's rule, stepped hour by hour on the real pool prices above. The inputs are real; no money moves. The same code reproduces the contract's replay of the 2022 and 2023 scares to the dollar.</p></div>
+
 <div class="card"><h2>The Window contract (NEAR testnet): penalty on the next dollar sold <span id="blk"></span></h2><div id="coins">Loading…</div>
 <p class="sub">The bar is how much of each coin's window is used. Empty: the pool buys at $1.00. Full: the pool refuses the coin.</p></div>
 
@@ -78,5 +81,11 @@ async function real(){try{const dy=(i,j,dec)=>"0x5e0d443f"+W(i)+W(j)+W(100000n*1
   document.getElementById("real").innerHTML=NM.map((n,i)=>{const sh=100*bal[i]/tot,pr=v[i]/top;
     return `<div class="coin"><b>${n}</b><div><div class="meter"><i style="width:${sh}%;background:var(--a)"></i></div><small>${sh.toFixed(1)}% of the pool · $${(bal[i]/1e6).toFixed(1)}M</small></div><div class="d ${pr<0.999?"bad":"ok"}">$${pr.toFixed(4)}</div></div>`}).join("");
  }catch(e){document.getElementById("real").textContent="Could not reach Ethereum mainnet: "+e.message;}}
-load();real();
+async function shadow(){try{const d=await(await fetch("https://raw.githubusercontent.com/Ashioya-ui/susds/main/docs/shadow.json",{cache:"no-store"})).json(),L=d.log,x=L[L.length-1];
+  const day=t=>new Date(t*1000).toISOString().slice(0,16).replace("T"," ")+" UTC",sgn=v=>(v>=0?"+":"")+v.toFixed(3)+"%";
+  const rows=L.slice(-6).reverse().map(r=>`<tr><td>${day(r.time).slice(5,16)}</td><td>$${r.price[0].toFixed(4)}</td><td>$${r.price[1].toFixed(4)}</td><td>$${r.price[2].toFixed(4)}</td><td>${r.window_used_pct.map(v=>v.toFixed(1)).join(" / ")}</td><td>$${r.penalties_usd.toFixed(2)}</td></tr>`).join("");
+  document.getElementById("shadow").innerHTML=`<div class="row"><span>Running since</span><b>${day(d.started)}</b></div><div class="row"><span>Hours of real data</span><b>${L.length-1}</b></div><div class="row"><span>Penalties earned</span><b>$${x.penalties_usd.toFixed(2)}</b></div><div class="row"><span>Pool value at market prices</span><b>${sgn(x.value_at_market_pct)}</b></div><div class="row"><span>Last step</span><b>${day(x.time)}</b></div>
+  <div class="t" style="margin-top:10px"><table><tr><th>Hour</th><th>USDC</th><th>USDT</th><th>DAI</th><th>Window used %</th><th>Penalties</th></tr>${rows}</table></div>`;
+ }catch(e){document.getElementById("shadow").textContent="Shadow log not reachable: "+e.message;}}
+load();real();shadow();
 </script></body></html>

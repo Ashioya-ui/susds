@@ -72,6 +72,10 @@ The test `replay_real_3pool_data` runs the contract's code on a $3,000,000 pool 
 
 March 2023 is the hard case: USDC and DAI were dumped together, both windows filled, and the pool sat 11% under par before ending the period 0.34% up. The pool size is a model input; the prices and balances are not.
 
+## Shadow run on the live market
+
+`data/live.py` reads the live 3pool and advances a $3,000,000 shadow pool under the same rule, one step per hour of real data. Its log is [`docs/shadow.json`](../../docs/shadow.json), shown on the live board. Inputs are real; no money moves. `python3 data/live.py check` shows the Python port matches the contract: it reproduces the table above to the dollar. `python3 data/live.py step` adds the latest hour.
+
 ## Replays with assumed lows
 
 Pool of $3,000,000 in three coins, `d0 = 0`, `dmax = 5%`, window one sixth of the pool per coin. Sellers sell the doubted coin while the window's marginal discount is below the market's discount at the reported low. Printed by the test `replay_three_scares`:
